@@ -135,9 +135,11 @@ class Report:
         # unless otherwise modified the default download type is in the .nessus format.
         
         def downloadResults(self):
+                
                 report = {"scan_id":self.scanID,
                           "format":self.downloadType
                           }
+
                 fileID = requests.post(url+"scans/"+str(self.scanID)+"/export",json=report,headers=headers,verify=True)
                 fileID = fileID.json()
                 # this is first half that prepares the int that combines the scan id and report type
@@ -145,7 +147,40 @@ class Report:
                 print(fileID)
 
                 # now we can download the file using the above id
-                reportResult = requests.get(url+"scans/"+str(self.scanID)+"/export/"+str(fileID)+"/download",headers=headers,verify=True)
+                reportResult = requests.get(url+"scans/"+str(self.scanID)+"/export/"+str(fileID)+"/download",
+                                            headers=headers,
+                                            verify=True)
                 return reportResult
 
+class Policy:
+
+        def __init__(self,name):
+                self.name = name
+                self.webapps = "no"
+                self.timeout = "5"
                 
+        # used to set whether or not to run web app tests. by default the option is set to no.
+        # returns False if yes or no is not set for the option
+        def scanWebApps(self,choice):
+                choice = (choice.lower())
+
+                if(choice == "yes" or choice == "no"):
+                        self.choice = choice
+                        status = True
+                else:
+                        status = False
+
+                return status
+
+        # used to set the network timeout variable. takes an int. returns false if not an int. default set to 5
+        def networkTimeout(self,choice):
+                if(choice.is_integer()):
+                        self.timeout = str(timeout)
+                        status = True
+                else:
+                        status = False
+
+                return status
+
+        def savePolicy(self):
+                print("saves the policy")
