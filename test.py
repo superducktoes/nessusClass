@@ -37,3 +37,8 @@ if __name__ == '__main__':
 
     # once it's complete the scan can be downloaded
     report.downloadResults()
+
+
+    testPolicy = Policy("test")
+    testPolicy.addWindowsCreds("admin","password")
+    print(testPolicy.buildWindowsCreds())

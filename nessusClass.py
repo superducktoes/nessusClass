@@ -10,25 +10,15 @@ headers = {'X-ApiKeys': 'accessKey=' + str(accessKey) + '; secretKey = ' + str(s
 
 class Scan:
 
-        """Scan - Used for building and launching scans. Does not take any attributes when creating the class.
-          - Requires scan name and host to build class
-
-        Attributes:
-
-        displayHosts - returns the list of hosts to be scanned
-        addHosts - add to the hosts being scanned
-        showPolicies - returns a list of available scan policies in json
-        setPolicy - takes the ID of the scan policy to use
-        selectedPolicy - returns the policy ID set for the scan
-        launchScan - runs the scan with the set scanner and policy.
-          - returns: scanID
-        
-        """
-        
+        # Scan - Used for building and launching scans. Does not take any attributes when creating the class.
+        # - Requires scan name and host to build class
+        # use launchScan() to run the scan after setting the name, hosts, policy, and scanner to use.
+                
         def __init__(self,name,hosts):
                 self.name = name
                 self.hosts = hosts
 
+        # shows a current list of hosts to be scanned
         def displayHosts(self):
                 return self.hosts
 
@@ -42,21 +32,43 @@ class Scan:
                 policies = requests.get(url+"policies/",headers=headers,verify=True)
                 listPolicies = policies.json()["policies"]
                 return listPolicies
-        
-        def setPolicy(self,policyID):
-                self.policy = policyID
 
+        # sets the policy to use based on ID. If the policy does not exist it returns false.
+        def setPolicy(self,policyID):
+                policyExists = requests.get(url+"policies/"+str(policyID),headers=headers,verify=True)
+                
+                if(policyExists.status_code == 200):
+                        self.policy = policyID
+                        status = True
+                else:
+                        status = False
+
+                return status
+
+        # returns the policy id to be used with the scan.
         def selectedPolicy(self):
                 return self.policy
 
+        # returns a list of available scanners
         def showScanners(self):
                 scanners = requests.get(url+"scanners/",headers=headers,verify=True)
                 listScanners = scanners.json()["scanners"]
                 return listScanners
 
+        #sets the scanner to use based on the id. returns false if the scanner does not exist.
         def setScanner(self,scannerID):
-                self.scannerID = scannerID
 
+                scannerExists = requests.get(url+"scanners/"+str(scannerID),headers=headers,verify=True)
+
+                if(scannerExists.status_code == 200):
+                        self.scannerID = scannerID
+                        status = True
+                else:
+                        status = False
+
+                return status
+
+        # returns the id of the scnaner to use for the scan
         def displayScanner(self):
                 return self.scannerID
 
@@ -64,9 +76,12 @@ class Scan:
         def updateScanName(self,name):
                 self.scanName = name
 
-        def displayScanname(self):
+        # returns the name set of the scan
+        def displayScanName(self):
                 return self.scanName
 
+        # used to launch the scan once the policy, scanner, hosts, and name are set
+        # returns the uuid of the scan launched
         def launchScan(self):
                 
                 # gets the uuid of the template to use before the scan is launched below.
@@ -154,26 +169,63 @@ class Report:
 
 class Policy:
 
+        # empty lists to store username/passowrd
+        windowsUsers = []
+        windowsPasswords = []
+        linuxUsers = []
+        linuxPasswords = []
+        # empty dict that combines the list at the end
+        windowsCredentials = {}
+        linuxCredentials = {}
+        
         def __init__(self,name):
                 self.name = name
                 self.webapps = "no"
                 self.timeout = "5"
+                self.pingHost = "yes"
+
+        # adds the username/password sets for windows hosts
+        def addWindowsCreds(self,username,password):
+                Policy.windowsUsers.append(str(username))
+                Policy.windowsPasswords.append(str(password))
+
+        # adds the username/passwords sets for linux hosts
+        def addLinuxCreds(self,username,password):
+                Policy.linuxUsers.append(str(username))
+                Policy.linuxPasswords.append(str(password))
+
+        # combines each of the creds lists into dict's for the policy
+        def buildCredentials(self):
+                windowsCredentials = dict(zip(Policy.windowsUsers,Policy.windowsPasswords))
+                linuxCredentials = dict(zip(Policy.linuxUsers,Policy.linuxPasswords))
+                print(windowsCredentials)
                 
         # used to set whether or not to run web app tests. by default the option is set to no.
         # returns False if yes or no is not set for the option
-        def scanWebApps(self,choice):
+        def setScanWebApps(self,choice):
                 choice = (choice.lower())
 
                 if(choice == "yes" or choice == "no"):
-                        self.choice = choice
+                        self.webapps = choice
                         status = True
                 else:
                         status = False
 
                 return status
 
+        def pingRemoteHost(self,choice):
+                choice = (choice.lower())
+                
+                if(choice == "yes" or choice == "no"):
+                        self.pingHost = choice
+                        status = True
+                else:
+                        status = False
+                        
+                        return status
+                
         # used to set the network timeout variable. takes an int. returns false if not an int. default set to 5
-        def networkTimeout(self,choice):
+        def setNetworkTimeout(self,choice):
                 if(choice.is_integer()):
                         self.timeout = str(timeout)
                         status = True
@@ -181,6 +233,8 @@ class Policy:
                         status = False
 
                 return status
-
+        
+        # call this last to save the policy
+        # returns the id of the policy created.
         def savePolicy(self):
                 print("saves the policy")
