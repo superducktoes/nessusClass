@@ -107,7 +107,8 @@ class Report:
         #scanID is returned from a scan that is launched
         def __init__(self,scanID):
                 self.scanID = scanID
-
+                self.downloadType = "nessus"
+                
         #returns the status of a scan based on the id passed to it
         #can return pending,running,completed, or error
         def scanStatus(self):
@@ -115,6 +116,36 @@ class Report:
                 status = status.json()["info"]
 
                 return status['status']
+        
+        # returns False if not set to one of the three file format types
+        def setDownloadType(self,download):
+                download = (download.lower())
+                if(download == "nessus" or download == "pdf" or download == "html"):
+                        self.downloadType = download
+                        status = True
+                else:
+                        status = False
 
+                return status
+        
+        # downloads the results of the file. Scan needs to be in the completed status before it can be downloaded.
+        # this is a two part process that needs both the scanID which is returned from the scan and the fileID which is
+        # obtained below. These two ID's are needed to download the actual results.
+        #
+        # unless otherwise modified the default download type is in the .nessus format.
+        
         def downloadResults(self):
-                print("downloading...")
+                report = {"scan_id":self.scanID,
+                          "format":self.downloadType
+                          }
+                fileID = requests.post(url+"scans/"+str(self.scanID)+"/export",json=report,headers=headers,verify=True)
+                fileID = fileID.json()
+                # this is first half that prepares the int that combines the scan id and report type
+                fileID = fileID["file"]
+                print(fileID)
+
+                # now we can download the file using the above id
+                reportResult = requests.get(url+"scans/"+str(self.scanID)+"/export/"+str(fileID)+"/download",headers=headers,verify=True)
+                return reportResult
+
+                

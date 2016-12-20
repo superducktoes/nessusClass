@@ -15,3 +15,4 @@ if __name__ == '__main__':
 
     report = Report(str(results))
     print(report.scanStatus())
+    report.downloadResults()
